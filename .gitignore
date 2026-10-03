@@ -1,0 +1,8 @@
+.venv/
+data/
+CLAUDE.md
+docs/Log.md
+.ipynb_checkpoints/
+__pycache__/
+*.pyc
+.idea/

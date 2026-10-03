@@ -1,0 +1,8 @@
+pandas
+numpy
+scipy
+statsmodels
+matplotlib
+jupyter
+scikit-uplift
+requests
