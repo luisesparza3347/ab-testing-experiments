@@ -126,3 +126,15 @@ The original decision rule only described lift over No E-Mail, so the Mens vs Wo
 If both Mens and Womens clear the ship broadly bars against No E-Mail, Mens vs Womens decides which one goes out. The winning email has to be significantly better after Holm correction and at least 0.5 percentage points better, the same two bars used everywhere else in the rule. If the difference is significant but below 0.5 percentage points, or not significant, the two emails are treated as tied and the spend readout decides which one ships.
 
 Why we chose this. It gives the third Holm comparison a real decision to drive, and it reuses the statistical and practical bars that were already locked, so no new threshold is introduced.
+
+### 2026-10-10, sanity check thresholds set (before any sanity check or outcome was run)
+
+The analysis plan named the SRM test and the covariate balance table but not the bars they are judged against. Both are fixed here before either check is run.
+
+SRM. A chi-square goodness of fit test of the arm counts against an equal one third split. A p-value below 0.0005 counts as a sample ratio mismatch, and the readout stops until the cause is found.
+
+Why we chose this. SRM is a health check on randomization and logging, not a test of the treatment, so false alarms need to be rare. 0.0005 is the threshold used by Fabijan et al. (2019), "Diagnosing Sample Ratio Mismatch in Online Controlled Experiments," KDD.
+
+Covariate balance. Standardized mean differences for recency, history, mens, womens, newbie, and each level of zip_code and channel as 0/1 indicators, for every pair of arms. Any covariate with an absolute SMD of 0.1 or more is flagged, noted in the readout, and treated as a candidate for adjustment. history_segment is left out because it is a binned copy of history. If history turns out heavily skewed, SMD on log transformed history is also reported as a robustness view, not a gate.
+
+Why we chose this. SMD measures how big a gap is, independent of sample size, while a significance test at about 21,000 customers per arm would flag gaps too small to matter. The 0.1 cutoff follows Austin (2009), "Balance diagnostics for comparing the distribution of baseline covariates between treatment groups in propensity-score matched samples," Statistics in Medicine. It comes from observational research, so here it serves as a descriptive check that randomization produced comparable groups.
