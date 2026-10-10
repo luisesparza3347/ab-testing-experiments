@@ -1,0 +1,12 @@
+variable,level,Mens E-Mail,Womens E-Mail,No E-Mail,level_total
+newbie,0,10621,10624,10611,31856
+newbie,1,10686,10763,10695,32144
+channel,Multichannel,2577,2579,2606,7762
+channel,Phone,9240,9454,9327,28021
+channel,Web,9490,9354,9373,28217
+zip_code,Rural,3243,3181,3139,9563
+zip_code,Surburban,9501,9650,9625,28776
+zip_code,Urban,8563,8556,8542,25661
+recency_bin,<=3,7469,7486,7438,22393
+recency_bin,4-8,7157,7269,7339,21765
+recency_bin,9+,6681,6632,6529,19842

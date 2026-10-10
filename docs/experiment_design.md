@@ -93,3 +93,36 @@ Do not ship. Neither the overall comparison nor any segment clears both the stat
 Guardrail results are reported as a stated caveat, not a gate, since neither guardrail is computed from this dataset.
 
 Why we chose this. Statistical significance alone is not enough at this sample size, a tiny and meaningless lift could still come back significant, so the rule requires both bars before recommending a broad rollout.
+
+## Changes from plan
+
+### 2026-10-10, segment comparison family clarified (before any outcome was compared across arms)
+
+The original segment section named the segments and the BH correction but did not say which comparisons run inside each segment level, so the size of the BH family was not defined. This note fixes that before any visit, conversion, or spend number is split by arm.
+
+Segment family. Inside each of the 11 segment levels (newbie 2, channel 3, zip_code 3, recency 3), two comparisons are run, Mens E-Mail vs No E-Mail and Womens E-Mail vs No E-Mail. That is 22 tests, corrected together as one BH family. Mens vs Womens is not tested inside segments.
+
+Why we chose this. Each of the 22 tests answers the one question the targeted rollout tier asks, whether a group responds to an email compared to getting none. Adding Mens vs Womens inside every level would make 33 tests and cost about 4 to 5 points of power per level for a question the decision rule does not ask at the segment level.
+
+If both emails beat No E-Mail in the same segment, the choice of which email to send falls back on the overall Mens vs Womens primary comparison, which has far more sample. The gap between the two emails inside that segment is reported as context only, not as a confirmed result.
+
+Segment power, stated in advance. Power to detect a true 0.5 percentage point lift varies a lot by level (from `notebooks/00_segment_family_power.ipynb`, using arm-pooled conversion per level, never split by arm). Under BH the real bar falls between alpha and alpha divided by 22, so power falls in a range.
+
+| Segment level | Customers per arm (smallest) | Power at 0.5pp |
+|---|---|---|
+| newbie 0 / 1 | 10,611 / 10,686 | 58 to 90% / 71 to 95% |
+| Phone / Web | 9,240 / 9,354 | 63 to 92% / 54 to 89% |
+| Surburban / Urban | 9,501 / 8,542 | 61 to 92% / 50 to 86% |
+| recency <=3 / 4-8 / 9+ | 7,438 / 7,157 / 6,529 | 30 to 71% / 48 to 85% / 46 to 84% |
+| Multichannel | 2,577 | 6 to 31% |
+| Rural | 3,139 | 9 to 40% |
+
+All 11 levels stay in the analysis as originally listed. Because most levels are underpowered at the MDE, and Multichannel and Rural badly so, a segment that does not come back significant is read as inconclusive, not as evidence the email has no effect there.
+
+### 2026-10-10, role of Mens vs Womens in the decision rule (before any outcome was compared across arms)
+
+The original decision rule only described lift over No E-Mail, so the Mens vs Womens primary comparison had no tier of its own. It now acts as the tiebreaker.
+
+If both Mens and Womens clear the ship broadly bars against No E-Mail, Mens vs Womens decides which one goes out. The winning email has to be significantly better after Holm correction and at least 0.5 percentage points better, the same two bars used everywhere else in the rule. If the difference is significant but below 0.5 percentage points, or not significant, the two emails are treated as tied and the spend readout decides which one ships.
+
+Why we chose this. It gives the third Holm comparison a real decision to drive, and it reuses the statistical and practical bars that were already locked, so no new threshold is introduced.
