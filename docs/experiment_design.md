@@ -138,3 +138,15 @@ Why we chose this. SRM is a health check on randomization and logging, not a tes
 Covariate balance. Standardized mean differences for recency, history, mens, womens, newbie, and each level of zip_code and channel as 0/1 indicators, for every pair of arms. Any covariate with an absolute SMD of 0.1 or more is flagged, noted in the readout, and treated as a candidate for adjustment. history_segment is left out because it is a binned copy of history. If history turns out heavily skewed, SMD on log transformed history is also reported as a robustness view, not a gate.
 
 Why we chose this. SMD measures how big a gap is, independent of sample size, while a significance test at about 21,000 customers per arm would flag gaps too small to matter. The 0.1 cutoff follows Austin (2009), "Balance diagnostics for comparing the distribution of baseline covariates between treatment groups in propensity-score matched samples," Statistics in Medicine. It comes from observational research, so here it serves as a descriptive check that randomization produced comparable groups.
+
+### 2026-10-10, conversion readout methods set (before any outcome was compared across arms)
+
+The analysis plan said each primary comparison gets a confidence interval and Holm correction but did not name the interval method, its level, or the test's standard error. All three are fixed here before the readout is run.
+
+Interval. Wald interval for the difference in conversion rates, with the unpooled standard error sqrt(p1(1-p1)/n1 + p2(1-p2)/n2). A Newcombe hybrid score interval (Newcombe 1998, Statistics in Medicine) is computed beside it as a cross-check, and any meaningful disagreement is reported.
+
+Level. The main interval is at alpha divided by 3 (98.33%), matching the planning alpha in the power calculation, with the ordinary 95% interval shown as context. If the 98.33% interval excludes zero, the Holm adjusted p-value is guaranteed to be below 0.05, so the interval never claims more than the decision does.
+
+Test. The z-test uses the same unpooled standard error as the interval, so the test and the interval cannot disagree. The pooled standard error is shown once as a cross-check.
+
+Why we chose this. Wald is the simplest interval to show and defend, and a pooled pre-check found about 192 expected conversions per arm, enough for its normal approximation to hold. The Newcombe cross-check confirms that instead of assuming it.
