@@ -150,3 +150,17 @@ Level. The main interval is at alpha divided by 3 (98.33%), matching the plannin
 Test. The z-test uses the same unpooled standard error as the interval, so the test and the interval cannot disagree. The pooled standard error is shown once as a cross-check.
 
 Why we chose this. Wald is the simplest interval to show and defend, and a pooled pre-check found about 192 expected conversions per arm, enough for its normal approximation to hold. The Newcombe cross-check confirms that instead of assuming it.
+
+### 2026-10-18, spend readout methods and the Womens spend rule set (before spend was compared across arms)
+
+The analysis plan named Welch's t-test and a 5,000 resample bootstrap for spend, and the decision rule said spend drives the call when a lift is significant but below the MDE. It did not name the bootstrap interval type, the interval level, the correction, what spend result counts as a win, or what a Womens spend win means when Mens already ships broadly. All of these are fixed here before spend is split by arm. The conversion readout was already done when this note was written, so it is stated plainly where that result matters below.
+
+Test and interval. Welch's t-test on mean spend per customer, for the same three comparisons as conversion. The main interval is a BCa bootstrap interval (Efron 1987, Journal of the American Statistical Association) with 5,000 resamples, with the percentile interval shown beside it. A convergence check on pooled spend (`notebooks/02_primary_readout.ipynb`, section 6) showed the BCa width at 5,000 resamples within about 0.7% of the width at 20,000.
+
+Level and correction. The three spend comparisons are their own Holm family, separate from conversion. The main interval is 98.33% (alpha divided by 3), with 95% shown as context.
+
+What counts as a spend win. A comparison counts as a significant spend lift only when both methods agree, meaning the Holm adjusted Welch p-value is below 0.05 and the 98.33% BCa interval excludes zero. If they disagree, the result is inconclusive. There is no minimum dollar bar. If Womens does not show a significant positive spend lift over No E-Mail, Womens does not ship broadly.
+
+What a Womens spend win means. If Womens does show a significant spend lift over No E-Mail, it counts as shippable alongside Mens, and the existing tiebreaker decides which email goes out. On conversion, Mens vs Womens came back significant but below 0.5 percentage points, which the tiebreaker (locked before the conversion readout) already treats as a tie, so Mens vs Womens on spend decides. If that spend comparison is also inconclusive, Mens ships, since it is the only email that cleared both bars on the primary metric.
+
+Why we chose this. There is no cost or margin data to base a dollar bar on, and the conversion MDE already covers whether a lift is big enough to matter. Requiring Welch and BCa to agree means no result depends on which method was picked. A pooled check at arm size (`notebooks/02_primary_readout.ipynb`, section 8) found the two can only disagree inside a band about a quarter of a standard error wide, so this costs very little power. Reusing the tiebreaker avoids adding a new threshold, and falling back to Mens keeps the final call tied to the primary metric.
