@@ -55,7 +55,8 @@ Customers who purchased in the last 12 months were randomly split roughly one th
 | SRM bar | p below 0.0005 | Before outcomes |
 | Balance bar | Absolute SMD of 0.1 or more is flagged | Before outcomes |
 | Conversion interval | Wald, unpooled SE, 98.33%, Newcombe cross-check | Before outcomes |
-| Spend test | Welch t plus BCa bootstrap, 5,000 resamples, own Holm family | Pre-registered (Welch, 5,000), After conversion (BCa, Holm) |
+| Spend test | Welch t plus BCa bootstrap, own Holm family | Pre-registered (Welch), After conversion (BCa, Holm) |
+| Bootstrap resamples | 50,000 reported, 5,000 shown beside | Pre-registered (5,000), After spend (50,000) |
 | Spend interval level | Matched to Holm rank, 98.33% / 97.5% / 95% | After spend |
 | CUPED covariate | history | Pre-registered |
 | Decision rule | Four tiers, Mens vs Womens tiebreaker, spend bar | Pre-registered, Before outcomes, After conversion |
@@ -160,7 +161,9 @@ Why. Wald is the simplest interval to show and defend, and a pooled pre-check fo
 
 For each of the three comparisons
 - Welch t-test on mean spend per customer [Pre-registered]
-- BCa bootstrap interval (Efron 1987, Journal of the American Statistical Association), 5,000 resamples, with the percentile interval beside it [Pre-registered (5,000), After conversion (BCa)]
+- BCa bootstrap interval (Efron 1987, Journal of the American Statistical Association), with the percentile interval beside it [After conversion]
+- 50,000 resamples for the reported intervals, with the original 5,000 resample intervals shown beside them. The 50,000 result is reported whatever it shows [Pre-registered (5,000), After spend (50,000)]
+- Seed stability. The decision-relevant bounds are recomputed over 50 seeds at 5,000 resamples and 10 seeds at 50,000, reporting min, median, max, and the share of seeds where each bound excludes zero. This is a robustness view, not a gate. If any seed at 50,000 flips a bound across zero, the result is reported as not robust across seeds, and the locked result is not changed [After spend]
 - Holm adjusted Welch p-values, own family of three [After conversion]
 - Interval level matched to the bar Holm uses at each rank, 98.33%, 97.5%, and 95% for the smallest, middle, and largest p-value. The rule as first written, every interval at 98.33%, is reported beside it [After spend]
 
@@ -220,4 +223,5 @@ Each row is a change to the design after the original pre-registration (0e6b098)
 | 2026-10-10 | Conversion interval method, level, and test SE set | Plan named intervals without a method | Nothing by arm | d9b32cb |
 | 2026-10-18 | BCa interval, spend Holm family, spend win definition, tier 2 spend bar, Mens fallback | Rule said spend drives tier 2 but set no bar | Conversion by arm, spend not split | 6f52a21 |
 | 2026-10-18 | Spend interval levels matched to Holm rank, rule as first written kept beside it | Holm p-value and fixed 98.33% interval tested different bars | Conversion and spend by arm | 797c903 |
-| 2026-10-19 | Doc reorganized into the current design with lock-timing tags, spend hypotheses written out. No locked choice changed | Amendments had grown longer than the plan | Conversion and spend by arm | this commit |
+| 2026-10-19 | Doc reorganized into the current design with lock-timing tags, spend hypotheses written out. No locked choice changed | Amendments had grown longer than the plan | Conversion and spend by arm | 093fcb8 |
+| 2026-10-19 | Bootstrap resamples raised from 5,000 to 50,000 for reported spend intervals, 5,000 kept beside, seed-stability check added. Set before any 50,000 or multi-seed interval was run | Width convergence checked width only, and a few extra seeds showed endpoints moving about $0.02 to $0.03. Noise shrinks with 1/sqrt(B), so 10x the resamples cuts it about 3.2x | Conversion and spend by arm at 5,000 resamples, seed 42 | this commit |
