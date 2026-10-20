@@ -50,14 +50,15 @@ Customers who purchased in the last 12 months were randomly split roughly one th
 | Planning alpha | 0.05 / 3 | Pre-registered |
 | Required sample | 12,313 per arm, smallest actual arm 21,306 | Pre-registered |
 | Primary comparisons | Mens vs No E-Mail, Womens vs No E-Mail, Mens vs Womens, Holm | Pre-registered |
-| Segments | 11 levels, 22 tests, Benjamini-Hochberg | Pre-registered |
+| Segments | 11 levels, 22 tests on conversion, Benjamini-Hochberg | Pre-registered |
+| Segment intervals | Wald with Newcombe cross-check, FCR level matched to BH | Set after spend |
 | SRM bar | p below 0.0005 | Pre-registered |
 | Balance bar | Absolute SMD of 0.1 or more is flagged | Pre-registered |
 | Conversion interval | Wald, unpooled SE, 98.33%, Newcombe cross-check | Pre-registered |
 | Spend test | Welch t plus BCa bootstrap, own Holm family | Pre-registered (Welch), Set after conversion (BCa, Holm) |
 | Bootstrap resamples | 50,000 reported, 5,000 shown beside | Pre-registered (5,000), Set after spend (50,000) |
 | Spend interval level | Matched to Holm rank, 98.33% / 97.5% / 95% | Set after spend |
-| CUPED covariate | history | Pre-registered |
+| CUPED | history only, on conversion and spend, reported beside the unadjusted readout | Pre-registered (history), Set after spend (use) |
 | Decision rule | Four tiers, Mens vs Womens tiebreaker, spend bar | Pre-registered, Set after conversion |
 
 ## Hypotheses
@@ -116,7 +117,7 @@ Segments [Pre-registered]
 
 Why tertiles. They gave much more balanced group sizes than a fixed cutoff, a 1.13x largest-to-smallest ratio versus 1.93x.
 
-Family. Inside each of the 11 levels, two comparisons run, Mens vs No E-Mail and Womens vs No E-Mail. That is 22 tests, corrected together with Benjamini-Hochberg. Mens vs Womens is not tested inside segments. If both emails beat No E-Mail in the same segment, the choice of email falls back on the overall Mens vs Womens primary comparison, and the gap inside the segment is reported as context only. [Pre-registered]
+Family. Inside each of the 11 levels, two comparisons on conversion run, Mens vs No E-Mail and Womens vs No E-Mail. That is 22 tests, corrected together with Benjamini-Hochberg. Mens vs Womens is not tested inside segments. If both emails beat No E-Mail in the same segment, the choice of email falls back on the overall Mens vs Womens primary comparison, and the gap inside the segment is reported as context only. [Pre-registered]
 
 Why. Segment results feed a targeting recommendation, not an irreversible rollout, so missing a real segment effect is the costlier mistake. Each of the 22 tests answers the one question the targeted tier asks, and adding Mens vs Womens would cost about 4 to 5 points of power per level.
 
@@ -174,11 +175,17 @@ Why. BCa corrects for bias and skew, which matters for heavy-tailed spend, and a
 
 Covariate is history (past 12 month spend), the pre-period variable with the strongest pooled correlation to conversion (0.0294) among the candidates checked in `notebooks/00_eda_pre_registration.ipynb`. Variance reduction and the equivalent sample size saved are reported. [Pre-registered]
 
-Why. Past spend is the most direct predictor of future purchasing, and it was measured before the send, so it cannot be affected by treatment.
+CUPED is applied to both conversion and spend. The decision stays on the unadjusted readout, and the CUPED-adjusted lifts and intervals are reported beside it as an efficiency result. No other covariates are added. [Set after spend, before any CUPED result was computed]
+
+Why. Past spend was measured before the send, so the email cannot have affected it. A pooled check (`notebooks/00_cuped_covariate_check.ipynb`) found that adding all other pre-period variables would raise the variance reduction for conversion from 0.085% to 0.178%, worth about 20 extra customers per arm, too small to justify the added complexity.
 
 ### 5. Segment effects
 
 Computed only for the 22 pre-registered tests above, with BH applied. [Pre-registered]
+
+Each test uses the same Wald interval and unpooled z-test as the primary readout, with a Newcombe interval beside it. Intervals are false coverage rate intervals at level 1 - R q / m (Benjamini and Yekutieli 2005, Journal of the American Statistical Association), where R is the number of BH-significant tests, q = 0.05, and m = 22. The plain 95% interval is shown as context, and if no test is significant, intervals are shown at 95% and labeled unadjusted. If Wald and Newcombe disagree on whether an interval excludes zero, the segment is flagged as sensitive to the interval method. [Set after spend, before any segment outcome was computed]
+
+Why. FCR intervals are dual to BH, so an interval excludes zero exactly when BH calls the test significant. A pooled check (`notebooks/00_segment_family_power.ipynb`, Step 7) found Multichannel and Rural can expect only about 15 to 18 No E-Mail conversions, where Wald is least reliable, so Newcombe is shown beside it.
 
 If the targeted rollout tier is not triggered, segment results are descriptive and do not change who receives an email. A segment with a BH-significant negative lift is flagged in the decision memo as a risk and a candidate for a follow-up test, not automatically excluded. [Set after spend, before any segment outcome was computed]
 
