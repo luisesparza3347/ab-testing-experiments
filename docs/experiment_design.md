@@ -195,6 +195,10 @@ Why. A rule for excluding or retargeting segments written after the overall resu
 
 Combines all of the above into one ship or target recommendation with a dollar estimate, in `docs/decision_memo.md`. [Pre-registered]
 
+The dollar estimate covers one send over the two week window. It is the spend lift per customer times the number of customers, with the interval bounds scaled the same way, stated as revenue, not profit. It is not annualized, and no margin or email cost is applied, since the dataset has no send frequency, margin, or cost data. [Set after spend]
+
+Why. This reports only what the experiment measured. Short-window effects can differ from long-run ones (Kohavi, Tang, and Xu 2020, Trustworthy Online Controlled Experiments, chapter 23), so repeat-send upside is named in words, not counted.
+
 ## Decision rule
 
 **Tiers for each email against No E-Mail** [Pre-registered]
