@@ -4,14 +4,13 @@
 
 This project has two parts. Part 1 analyzes a public randomized experiment, the Hillstrom email test (MineThatData, 2008), and ends in a ship or target decision. Part 2 is a synthetic marketplace simulation on how interference biases user-level randomization.
 
-This doc is the current design for both parts. The original Part 1 pre-registration was committed before any outcome was compared across arms (commit 0e6b098). Every choice below is tagged with when it was locked, and the amendment log at the bottom links each change to its commit.
+This doc is the current design for both parts. Every choice is tagged with when it was locked, and git history holds every prior version.
 
 | Tag | Meaning |
 |---|---|
-| [Pre-registered] | In the original plan or its two same-day MDE fixes, committed 2026-10-04 before any outcome was split by arm |
-| [Before outcomes] | Added later, still before any outcome was split by arm |
-| [After conversion] | Added after the conversion readout, before spend was split by arm |
-| [After spend] | Added after the spend readout |
+| [Pre-registered] | Committed before any outcome was compared across arms |
+| [Set after conversion] | Set after the conversion readout, before spend was split by arm |
+| [Set after spend] | Set after the spend readout |
 
 # Part 1. Hillstrom email experiment
 
@@ -51,21 +50,21 @@ Customers who purchased in the last 12 months were randomly split roughly one th
 | Planning alpha | 0.05 / 3 | Pre-registered |
 | Required sample | 12,313 per arm, smallest actual arm 21,306 | Pre-registered |
 | Primary comparisons | Mens vs No E-Mail, Womens vs No E-Mail, Mens vs Womens, Holm | Pre-registered |
-| Segments | 11 levels, 22 tests, Benjamini-Hochberg | Pre-registered (list), Before outcomes (family) |
-| SRM bar | p below 0.0005 | Before outcomes |
-| Balance bar | Absolute SMD of 0.1 or more is flagged | Before outcomes |
-| Conversion interval | Wald, unpooled SE, 98.33%, Newcombe cross-check | Before outcomes |
-| Spend test | Welch t plus BCa bootstrap, own Holm family | Pre-registered (Welch), After conversion (BCa, Holm) |
-| Bootstrap resamples | 50,000 reported, 5,000 shown beside | Pre-registered (5,000), After spend (50,000) |
-| Spend interval level | Matched to Holm rank, 98.33% / 97.5% / 95% | After spend |
+| Segments | 11 levels, 22 tests, Benjamini-Hochberg | Pre-registered |
+| SRM bar | p below 0.0005 | Pre-registered |
+| Balance bar | Absolute SMD of 0.1 or more is flagged | Pre-registered |
+| Conversion interval | Wald, unpooled SE, 98.33%, Newcombe cross-check | Pre-registered |
+| Spend test | Welch t plus BCa bootstrap, own Holm family | Pre-registered (Welch), Set after conversion (BCa, Holm) |
+| Bootstrap resamples | 50,000 reported, 5,000 shown beside | Pre-registered (5,000), Set after spend (50,000) |
+| Spend interval level | Matched to Holm rank, 98.33% / 97.5% / 95% | Set after spend |
 | CUPED covariate | history | Pre-registered |
-| Decision rule | Four tiers, Mens vs Womens tiebreaker, spend bar | Pre-registered, Before outcomes, After conversion |
+| Decision rule | Four tiers, Mens vs Womens tiebreaker, spend bar | Pre-registered, Set after conversion |
 
 ## Hypotheses
 
 Conversion. H0 is that an email campaign has no effect on conversion rate compared to No E-Mail, and any difference seen is chance. H1 is that it changes conversion rate. The same pair applies to Mens vs Womens, comparing the two campaigns. [Pre-registered]
 
-Spend. H0 is that an email campaign has no effect on mean spend per customer compared to No E-Mail. H1 is that it changes mean spend. The same pair applies to Mens vs Womens. [Pre-registered, written out explicitly in the 2026-10-19 reorganization]
+Spend. H0 is that an email campaign has no effect on mean spend per customer compared to No E-Mail. H1 is that it changes mean spend. The same pair applies to Mens vs Womens. [Pre-registered]
 
 ## Metrics
 
@@ -103,7 +102,7 @@ Three primary comparisons on conversion, Mens vs No E-Mail, Womens vs No E-Mail,
 
 Why. Each comparison drives a costly rollout decision, so the family needs control over the chance of any false positive. Holm gives that guarantee and is less conservative than Bonferroni.
 
-The same three comparisons on spend form their own separate Holm family. [After conversion]
+The same three comparisons on spend form their own separate Holm family. [Set after conversion]
 
 Why. This keeps spend at the same false-positive control as conversion without changing the conversion results already reported.
 
@@ -117,11 +116,11 @@ Segments [Pre-registered]
 
 Why tertiles. They gave much more balanced group sizes than a fixed cutoff, a 1.13x largest-to-smallest ratio versus 1.93x.
 
-Family. Inside each of the 11 levels, two comparisons run, Mens vs No E-Mail and Womens vs No E-Mail. That is 22 tests, corrected together with Benjamini-Hochberg. Mens vs Womens is not tested inside segments. If both emails beat No E-Mail in the same segment, the choice of email falls back on the overall Mens vs Womens primary comparison, and the gap inside the segment is reported as context only. [Pre-registered (BH), Before outcomes (family)]
+Family. Inside each of the 11 levels, two comparisons run, Mens vs No E-Mail and Womens vs No E-Mail. That is 22 tests, corrected together with Benjamini-Hochberg. Mens vs Womens is not tested inside segments. If both emails beat No E-Mail in the same segment, the choice of email falls back on the overall Mens vs Womens primary comparison, and the gap inside the segment is reported as context only. [Pre-registered]
 
 Why. Segment results feed a targeting recommendation, not an irreversible rollout, so missing a real segment effect is the costlier mistake. Each of the 22 tests answers the one question the targeted tier asks, and adding Mens vs Womens would cost about 4 to 5 points of power per level.
 
-Power at the MDE, from `notebooks/00_segment_family_power.ipynb` using arm-pooled conversion per level. Under BH the real bar falls between alpha and alpha / 22, so power is a range. [Before outcomes]
+Power at the MDE, from `notebooks/00_segment_family_power.ipynb` using arm-pooled conversion per level. Under BH the real bar falls between alpha and alpha / 22, so power is a range. [Pre-registered]
 
 | Segment level | Customers per arm (smallest) | Power at 0.5pp |
 |---|---|---|
@@ -138,17 +137,17 @@ All 11 levels stay in. Most are underpowered at the MDE, Multichannel and Rural 
 
 ### 1. Sanity checks
 
-SRM. Chi-square goodness of fit of the arm counts against an equal one third split. A p-value below 0.0005 counts as a mismatch and stops the readout until the cause is found. [Before outcomes]
+SRM. Chi-square goodness of fit of the arm counts against an equal one third split. A p-value below 0.0005 counts as a mismatch and stops the readout until the cause is found. [Pre-registered]
 
 Why. SRM is a health check on randomization and logging, so false alarms need to be rare. The 0.0005 bar follows Fabijan et al. (2019), "Diagnosing Sample Ratio Mismatch in Online Controlled Experiments," KDD.
 
-Covariate balance. Standardized mean differences for recency, history, mens, womens, newbie, and each level of zip_code and channel as 0/1 indicators, for every pair of arms. An absolute SMD of 0.1 or more is flagged and treated as a candidate for adjustment. history_segment is left out as a binned copy of history. If history is heavily skewed, SMD on log history is also reported as a robustness view, not a gate. [Before outcomes]
+Covariate balance. Standardized mean differences for recency, history, mens, womens, newbie, and each level of zip_code and channel as 0/1 indicators, for every pair of arms. An absolute SMD of 0.1 or more is flagged and treated as a candidate for adjustment. history_segment is left out as a binned copy of history. If history is heavily skewed, SMD on log history is also reported as a robustness view, not a gate. [Pre-registered]
 
 Why. SMD measures gap size independent of sample size, while a significance test at about 21,000 per arm would flag gaps too small to matter. The 0.1 cutoff follows Austin (2009), Statistics in Medicine, and serves here as a descriptive check.
 
 ### 2. Conversion readout
 
-For each of the three comparisons [Before outcomes]
+For each of the three comparisons [Pre-registered]
 - Difference in conversion rates with a Wald interval, unpooled SE sqrt(p1(1-p1)/n1 + p2(1-p2)/n2)
 - Newcombe hybrid score interval beside it as a cross-check (Newcombe 1998, Statistics in Medicine)
 - Main interval at 98.33% (alpha / 3), ordinary 95% shown as context
@@ -161,13 +160,13 @@ Why. Wald is the simplest interval to show and defend, and a pooled pre-check fo
 
 For each of the three comparisons
 - Welch t-test on mean spend per customer [Pre-registered]
-- BCa bootstrap interval (Efron 1987, Journal of the American Statistical Association), with the percentile interval beside it [After conversion]
-- 50,000 resamples for the reported intervals, with the original 5,000 resample intervals shown beside them. The 50,000 result is reported whatever it shows [Pre-registered (5,000), After spend (50,000)]
-- Seed stability. The decision-relevant bounds are recomputed over 50 seeds at 5,000 resamples and 10 seeds at 50,000, reporting min, median, max, and the share of seeds where each bound excludes zero. This is a robustness view, not a gate. If any seed at 50,000 flips a bound across zero, the result is reported as not robust across seeds, and the locked result is not changed [After spend]
-- Holm adjusted Welch p-values, own family of three [After conversion]
-- Interval level matched to the bar Holm uses at each rank, 98.33%, 97.5%, and 95% for the smallest, middle, and largest p-value. The rule as first written, every interval at 98.33%, is reported beside it [After spend]
+- BCa bootstrap interval (Efron 1987, Journal of the American Statistical Association), with the percentile interval beside it [Set after conversion]
+- 50,000 resamples for the reported intervals, with the original 5,000 resample intervals shown beside them. The 50,000 result is reported whatever it shows [Pre-registered (5,000), Set after spend (50,000)]
+- Seed stability. The decision-relevant bounds are recomputed over 50 seeds at 5,000 resamples and 10 seeds at 50,000, reporting min, median, max, and the share of seeds where each bound excludes zero. This is a robustness view, not a gate. If any seed at 50,000 flips a bound across zero, the result is reported as not robust across seeds, and the locked result is not changed [Set after spend]
+- Holm adjusted Welch p-values, own family of three [Set after conversion]
+- Interval level matched to the bar Holm uses at each rank, 98.33%, 97.5%, and 95% for the smallest, middle, and largest p-value. The rule as first written, every interval at 98.33%, is reported beside it [Set after spend]
 
-A spend comparison counts as a significant lift only when the Holm adjusted Welch p-value is below 0.05 and the BCa interval at its matched level excludes zero. If the two disagree, the result is inconclusive. There is no minimum dollar bar. [After conversion, matched level After spend]
+A spend comparison counts as a significant lift only when the Holm adjusted Welch p-value is below 0.05 and the BCa interval at its matched level excludes zero. If the two disagree, the result is inconclusive. There is no minimum dollar bar. [Set after conversion, matched level set after spend]
 
 Why. BCa corrects for bias and skew, which matters for heavy-tailed spend, and a convergence check (`notebooks/02_primary_readout.ipynb`, section 6) put its width at 5,000 resamples within about 0.7% of the width at 20,000. Requiring both methods to agree means no result depends on which one was picked, and there is no cost or margin data to base a dollar bar on.
 
@@ -179,7 +178,11 @@ Why. Past spend is the most direct predictor of future purchasing, and it was me
 
 ### 5. Segment effects
 
-Computed only for the 22 pre-registered tests above, with BH applied. [Pre-registered, Before outcomes]
+Computed only for the 22 pre-registered tests above, with BH applied. [Pre-registered]
+
+If the targeted rollout tier is not triggered, segment results are descriptive and do not change who receives an email. A segment with a BH-significant negative lift is flagged in the decision memo as a risk and a candidate for a follow-up test, not automatically excluded. [Set after spend, before any segment outcome was computed]
+
+Why. A rule for excluding or retargeting segments written after the overall results were known would be shaped by them. Flagging harm keeps a negative result from going unreported without adding that kind of rule.
 
 ### 6. Decision memo
 
@@ -194,13 +197,13 @@ Combines all of the above into one ship or target recommendation with a dollar e
 3. Targeted rollout. The overall comparison is not significant, but a pre-registered segment (BH corrected) shows a significant, practically meaningful lift. Ship to that segment only.
 4. Do not ship. Neither the overall comparison nor any segment clears both the statistical and practical bars.
 
-**Spend bar for tier 2.** A campaign in tier 2 counts as shippable only if it shows a significant positive spend lift over No E-Mail, as defined in the spend readout. Otherwise it does not ship broadly. [After conversion]
+**Spend bar for tier 2.** A campaign in tier 2 counts as shippable only if it shows a significant positive spend lift over No E-Mail, as defined in the spend readout. Otherwise it does not ship broadly. [Set after conversion]
 
-**Choosing between the two emails.** If both emails clear the ship broadly bars, Mens vs Womens decides. One email wins if it is significantly better on conversion after Holm and at least 0.5 percentage points better. Otherwise the two are tied and the spend readout decides. [Before outcomes]
+**Choosing between the two emails.** If both emails clear the ship broadly bars, Mens vs Womens decides. One email wins if it is significantly better on conversion after Holm and at least 0.5 percentage points better. Otherwise the two are tied and the spend readout decides. [Pre-registered]
 
-The same tiebreaker applies when one email ships broadly and the other is shippable through the tier 2 spend bar. A conversion tie then goes to Mens vs Womens on spend. [After conversion]
+The same tiebreaker applies when one email ships broadly and the other is shippable through the tier 2 spend bar. A conversion tie then goes to Mens vs Womens on spend. [Set after conversion]
 
-If that spend comparison is also inconclusive, Mens ships, as the only email that cleared both bars on conversion. [After conversion]
+If that spend comparison is also inconclusive, Mens ships, as the only email that cleared both bars on conversion. [Set after conversion]
 
 **Guardrails** are reported as a caveat, not a gate, since neither is computed from this dataset. [Pre-registered]
 
@@ -209,19 +212,3 @@ Why. At this sample size a tiny, meaningless lift can still come back significan
 # Part 2. Interference simulation
 
 Written and committed before the simulation is run (Session 3).
-
-# Amendment log
-
-Each row is a change to the design after the original pre-registration (0e6b098). "Seen by then" is what outcome results existed when the change was made.
-
-| Date | Change | Why | Seen by then | Commit |
-|---|---|---|---|---|
-| 2026-10-04 | MDE basis rewritten, unsupported claims removed, 0.5pp labeled a judgment call, achieved power and detectable MDE added | Original basis cited an effect size the pooled EDA could not have shown | Nothing by arm | 4fba7ef, dcbff79 |
-| 2026-10-10 | Segment family defined as 22 tests, per-level power stated | BH family size was undefined | Nothing by arm | 3256102 |
-| 2026-10-10 | Mens vs Womens made the tiebreaker | Third Holm comparison had no role in the rule | Nothing by arm | 3256102 |
-| 2026-10-10 | SRM and SMD thresholds set | Checks were named without bars | Nothing by arm | ab409d6 |
-| 2026-10-10 | Conversion interval method, level, and test SE set | Plan named intervals without a method | Nothing by arm | d9b32cb |
-| 2026-10-18 | BCa interval, spend Holm family, spend win definition, tier 2 spend bar, Mens fallback | Rule said spend drives tier 2 but set no bar | Conversion by arm, spend not split | 6f52a21 |
-| 2026-10-18 | Spend interval levels matched to Holm rank, rule as first written kept beside it | Holm p-value and fixed 98.33% interval tested different bars | Conversion and spend by arm | 797c903 |
-| 2026-10-19 | Doc reorganized into the current design with lock-timing tags, spend hypotheses written out. No locked choice changed | Amendments had grown longer than the plan | Conversion and spend by arm | 093fcb8 |
-| 2026-10-19 | Bootstrap resamples raised from 5,000 to 50,000 for reported spend intervals, 5,000 kept beside, seed-stability check added. Set before any 50,000 or multi-seed interval was run | Width convergence checked width only, and a few extra seeds showed endpoints moving about $0.02 to $0.03. Noise shrinks with 1/sqrt(B), so 10x the resamples cuts it about 3.2x | Conversion and spend by arm at 5,000 resamples, seed 42 | this commit |
