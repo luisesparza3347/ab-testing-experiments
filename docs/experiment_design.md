@@ -8,7 +8,7 @@ This doc is the current design for both parts. Every choice is tagged with when 
 
 | Tag | Meaning |
 |---|---|
-| [Pre-registered] | Committed before any outcome was compared across arms |
+| [Pre-registered] | Part 1, committed before any outcome was compared across arms. Part 2, committed before the simulation was run |
 | [Set after conversion] | Set after the conversion readout, before spend was split by arm |
 | [Set after spend] | Set after the spend readout |
 
@@ -222,4 +222,153 @@ Why. At this sample size a tiny, meaningless lift can still come back significan
 
 # Part 2. Interference simulation
 
-Written and committed before the simulation is run (Session 3).
+## Question
+
+In a marketplace, buyers in the same region compete for the same limited supply. If a discount is tested by randomizing individual buyers, discounted buyers take units that control buyers would have bought, and the test compares treated buyers against a control group the treatment itself made worse off. Part 2 measures how much that biases a user-level test, and whether cluster-by-region and switchback designs remove the bias and at what cost in power.
+
+All data here is synthetic. Every input is either grounded in Part 1, derived from already locked numbers, or taken from a cited source, and every choice below was committed before the simulation was run.
+
+## Setup
+
+```mermaid
+flowchart LR
+    subgraph U["User-level"]
+        direction TB
+        U1["One region"] --> U2["Discounted buyers"]
+        U1 --> U3["Control buyers"]
+        U2 -- "share the same daily supply" --- U3
+        U2 -. "take units control would have bought" .-> U3
+    end
+    subgraph C["Cluster by region"]
+        direction TB
+        C1["25 regions, everyone discounted"]
+        C2["25 regions, no one discounted"]
+        C1 ~~~ C2
+    end
+    subgraph S["Switchback"]
+        direction TB
+        S1["Each region, 7 random days discounted"]
+        S2["Same region, other 7 days not"]
+        S1 ~~~ S2
+    end
+```
+
+In the user-level design treated and control buyers share supply, so interference leaks between them. In the cluster design each region's supply is used by only one group. In the switchback design each day's supply is used by only one group, and no carryover between days is modeled.
+
+## Design at a glance
+
+| Choice | Value | Locked |
+|---|---|---|
+| Regions | 50 | Pre-registered |
+| Buyers per region | 38,426 | Pre-registered |
+| Test length | 14 days, daily periods | Pre-registered |
+| Base purchase rate | 0.5726% over two weeks, 0.04101% a day | Pre-registered |
+| Demand lift from the discount | +0.6805 percentage points over two weeks | Pre-registered |
+| Region spread in base rate | Two levels, 0% and 23.41% of the base rate | Pre-registered |
+| Supply | Fixed daily units per region, random rationing when demand exceeds it | Pre-registered |
+| Supply tightness | 7 levels per region, two ends plus 5 across the interference band | Pre-registered |
+| True effect | Global treatment effect, everyone discounted minus no one discounted | Pre-registered |
+| Designs | User-level, cluster by region, switchback | Pre-registered |
+| Measures | Bias, power, coverage of 95% intervals, each with its Monte Carlo SE | Pre-registered |
+| Alpha | 0.05 two-sided | Pre-registered |
+| Runs | 10,000 per scenario, 14 scenarios | Pre-registered |
+| Seed | 42, independent streams per run | Pre-registered |
+
+## The market
+
+Each region has buyers and a fixed number of supply units each day. Every day, each buyer wants to buy with some probability, higher if they have the discount. If more buyers want to buy than there are units, the units go to a random subset of them. A buyer converts on a day if they wanted to buy and got a unit. The outcome is conversion per buyer per day. [Pre-registered]
+
+Why. This is the smallest model that produces the bias, and each piece can be explained in one sentence. It matches the eBay case in Blake and Coey (2014, "Why Marketplace Experimentation Is Harder than It Seems," ACM EC), where test and control bidders competed in the same auctions and the user-level estimate was too large by a factor of around two.
+
+## Inputs
+
+All numbers below come from `notebooks/00_sim_design_check.ipynb`.
+
+**Base rate.** The two-week purchase rate with no discount is 0.5726%, the Part 1 No E-Mail conversion rate. [Pre-registered]
+
+**Lift.** The discount raises the two-week purchase rate by 0.6805 percentage points, the Part 1 Mens vs No E-Mail lift, to 1.2531%. This is the lift in wanting to buy. The true effect on conversion comes out of the simulation after rationing and shrinks as supply tightens. [Pre-registered]
+
+Why. Both come from one real randomized comparison, so the setup reads as the Part 1 effect placed in a market with limited supply. Hillstrom is an email retailer and an email is not a price discount, so these are grounded sizes, not evidence about how marketplaces or discounts behave.
+
+**Daily rates.** Daily rate = 1 - (1 - two-week rate)^(1/14), giving 0.04101% with no discount and 0.09003% with it. This assumes the chance of buying is the same every day of the window, which Hillstrom cannot confirm because it has no purchase dates. [Pre-registered]
+
+**Region spread.** Each region's two-week base rate is drawn from a beta distribution with mean 0.5726% and SD either 0 or 23.41% of the mean, then converted to daily. The lift is added to each region's own two-week rate. [Pre-registered]
+
+Why. The spread in No E-Mail conversion across Hillstrom zip_code groups, after removing sampling noise, is 23.41% of the base rate, but a homogeneity test cannot tell it from zero (p = 0.103). Across zip_code by channel groups it is zero. The data cannot rule out either end, so both are run.
+
+## Market size
+
+**Regions.** 50. [Pre-registered]
+
+Why. Cameron and Miller (2015, "A Practitioner's Guide to Cluster-Robust Inference," Journal of Human Resources) say "few" clusters "may range from less than 20 to less than 50 clusters in the balanced case." 50 sits at the edge of that range, which is conservative for the region-level t-test used here.
+
+**Buyers per region.** 38,426, the smallest number where every supply level below can be set as planned, including 5 distinct whole-unit levels across the interference band. At the average region that is about 15.8 interested buyers a day with no discount and 34.6 with everyone discounted. [Pre-registered]
+
+Why. Rationing needs real daily demand. An 80% power target for the cluster design would have given only 132 buyers per region, about 0.05 interested buyers per region a day, so the mechanism, not power, sets the size. Power is then compared across supply levels, where the true effect shrinks.
+
+## Supply tightness
+
+Each region's daily supply is set from its own exact binomial demand, using an error rate of 1 in 7,000,000, which is 1 / (50 regions x 14 days x 10,000 runs). [Pre-registered]
+
+- Loose end, the smallest supply that everyone-discounted demand exceeds with probability at most 1 in 7,000,000. Rationing should essentially never happen, so every design should show zero bias here. Any bias at this end means a bug
+- Tight end, the largest supply that no-discount demand falls short of with probability at most 1 in 7,000,000, with a floor of 1 unit. Supply runs out almost every day whether or not anyone is discounted, so the true effect is close to zero. In low-rate regions under spread even 1 unit cannot meet the 1 in 7,000,000 bar, but demand falls short of it on only about 0.02% of days (2.15e-4 for a 1st percentile region, `results/tables/sim_end_check.csv`)
+- 5 levels spaced evenly from the region's expected no-discount demand to its expected everyone-discounted demand, where interference builds up
+
+At the average region the ends are 1 and 69 units, and the middle band runs from about 16 to 35.
+
+Why. The error rate is derived from the run plan so the whole loose-end scenario expects under one rationed region-day. Setting ends per region keeps the loose-end guarantee in every region, which a single supply ratio did not under spread. The tight end only needs the true effect to be near zero, so the 1 unit floor is enough there. Putting 5 of the 7 levels in the band puts them where bias changes.
+
+## True effect
+
+The true effect is the global treatment effect, conversion with everyone discounted minus conversion with no one discounted. In each run it is computed on the same regions and random draws used by the three designs. [Pre-registered]
+
+Why. It is what a launch delivers. Johari, Li, Liskovich, and Weintraub (2022, "Experimental Design in Two-Sided Platforms: An Analysis of Bias," Management Science) define it this way and show that customer-side randomization is biased in supply-constrained markets. A buyer's own direct effect would make the user-level design look unbiased and hide the problem.
+
+## Designs and their tests
+
+All three designs use the same 50 regions, buyers, and 14 days. [Pre-registered]
+
+| Design | Assignment | Test |
+|---|---|---|
+| User-level | Half the buyers in each region discounted, rounded down | Two-proportion z-test on buyer-days, unpooled SE, as in Part 1 |
+| Cluster by region | Exactly 25 of the 50 regions discounted | Welch t-test on each region's conversion |
+| Switchback | In each region, exactly 7 of the 14 days discounted, in random order | One-sample t-test on each region's discounted-minus-control difference, 49 df |
+
+Why. Each test treats the randomized unit as the independent unit. The user-level test is what a team unaware of interference would run, which is the point of including it. In the switchback design each region is compared with itself, so differences between regions drop out.
+
+No carryover between days is modeled. Carryover, where a treatment keeps affecting outcomes after it ends, is the key complication in real switchback experiments (Bojinov, Simchi-Levi, and Zhao 2023, "Design and Analysis of Switchback Experiments," Management Science), so the switchback results here are a best case. [Pre-registered]
+
+## What gets measured
+
+For each design at each of the 14 scenarios (7 tightness levels x 2 spread levels) [Pre-registered]
+- Bias, the average estimate minus the average true effect
+- Power, the share of runs where the test rejects zero at alpha 0.05 two-sided
+- Coverage, the share of runs where the 95% interval contains that run's true effect
+
+Why coverage. Near the tight end the true effect is about zero, so a user-level test that keeps rejecting is finding an effect that isn't there. Coverage shows that directly.
+
+**Runs.** 10,000 per scenario. [Pre-registered]
+
+Why. Morris, White, and Crowther (2019, "Using simulation studies to evaluate statistical methods," Statistics in Medicine) size runs from the target Monte Carlo SE, runs = p(1 - p) / SE^2. 10,000 keeps the SE of any power or coverage figure at or below 0.5 points, wherever it lands. Each result is reported with its Monte Carlo SE.
+
+**Seeds.** One master seed, 42, with an independent random stream spawned for each run, so runs never share random numbers. [Pre-registered]
+
+## Checks before the main runs
+
+[Pre-registered]
+- Zero lift. With no discount effect there is no interference, so every design's test should reject about 5% of the time. With zero lift the 5 band levels collapse into one, so this runs at the loose end, the tight end, and that one band level, at both spread levels, with 10,000 runs each. A design passes if its rejection rate is within the Holm-corrected bar of 5%
+- Loose end. Bias for every design should be consistent with zero, tested as bias divided by its Monte Carlo SE at the 5% level
+- Sensitivity. Two cases, each changing one Part 1 input and resized with the same market rule, run at their own 7 tightness levels and both spread levels with 10,000 runs each. Higher base rate, the No E-Mail visit rate (10.62% over two weeks) with the same +0.6805pp lift, 6,275 buyers per region. Smaller lift, the Womens vs No E-Mail lift (+0.3111pp) with the same 0.5726% base rate, 38,426 buyers per region. The user-level bias should still grow as supply tightens and the other two designs should still show none
+
+Why. Both inputs are real rates from the same experiment, so the check uses grounded values rather than picked ones. The visit rate is a different behavior from buying and only tests whether the pattern holds at a higher rate.
+
+Each check family is corrected with Holm, the same method as the Part 1 primary family, so the chance of any false alarm in a family stays at 5%. The loose-end family has 6 tests (3 designs x 2 spread levels) and the zero-lift family has 18 (3 designs x 3 levels x 2 spread levels).
+
+Why. Running many checks at an uncorrected 5% bar would make at least one false alarm likely even with no bug.
+
+## Expected results, written before running
+
+[Pre-registered]
+- User-level bias is about zero at the loose end and grows as supply tightens, and its coverage falls well below 95% near the tight end
+- Cluster and switchback bias stays about zero at every tightness level
+- Switchback has more power than cluster when regions differ, because each region is its own control. With no spread the gap should be small
