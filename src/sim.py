@@ -45,6 +45,8 @@ def supply_levels(n, q0, q1, eps):
     for _ in range(5):
         k = np.where((k >= 0) & (stats.binom.cdf(k, n, q0) > eps), k - 1, k)
     tight = np.maximum(k + 1, 1)
+    assert np.all(stats.binom.sf(loose, n, q1) <= eps) and np.all(stats.binom.sf(loose - 1, n, q1) > eps)
+    assert np.all((k + 1 < 1) | (stats.binom.cdf(k, n, q0) <= eps)) and np.all(stats.binom.cdf(k + 1, n, q0) > eps)
 
     band = np.round(np.linspace(n * q0, n * q1, 5, axis=1)).astype(int)
     return np.column_stack([tight, band, loose])
@@ -163,6 +165,7 @@ def summarize(per_run):
             "power_mcse": np.sqrt(power * (1 - power) / runs),
             "coverage": coverage,
             "coverage_mcse": np.sqrt(coverage * (1 - coverage) / runs),
+            "mean_se": per_run[f"{design}_se"].mean(),
             "degenerate_runs": int(per_run[f"{design}_degenerate"].sum()),
         })
     return pd.DataFrame(rows)
