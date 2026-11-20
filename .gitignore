@@ -6,3 +6,4 @@ docs/Log.md
 __pycache__/
 *.pyc
 .idea/
+egm_review/
