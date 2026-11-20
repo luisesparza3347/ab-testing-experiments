@@ -347,6 +347,8 @@ For each design at each of the 14 scenarios (7 tightness levels x 2 spread level
 
 Why coverage. Near the tight end the true effect is about zero, so a user-level test that keeps rejecting is finding an effect that isn't there. Coverage shows that directly.
 
+At the tight end every region sells exactly its 1 unit almost every day, so region-level conversion barely varies. When the cluster or switchback SE is exactly 0, the test does not reject and the interval is the point estimate alone, counted as covering only if it equals that run's true effect. The number of such runs is reported. [Pre-registered]
+
 **Runs.** 10,000 per scenario. [Pre-registered]
 
 Why. Morris, White, and Crowther (2019, "Using simulation studies to evaluate statistical methods," Statistics in Medicine) size runs from the target Monte Carlo SE, runs = p(1 - p) / SE^2. 10,000 keeps the SE of any power or coverage figure at or below 0.5 points, wherever it lands. Each result is reported with its Monte Carlo SE.
@@ -356,13 +358,13 @@ Why. Morris, White, and Crowther (2019, "Using simulation studies to evaluate st
 ## Checks before the main runs
 
 [Pre-registered]
-- Zero lift. With no discount effect there is no interference, so every design's test should reject about 5% of the time. With zero lift the 5 band levels collapse into one, so this runs at the loose end, the tight end, and that one band level, at both spread levels, with 10,000 runs each. A design passes if its rejection rate is within the Holm-corrected bar of 5%
+- Zero lift. With no discount effect there is no interference, so every design's test should reject about 5% of the time. With zero lift the 5 band levels collapse into one, so this runs at the loose end, the tight end, and that one band level, at both spread levels, with 10,000 runs each. A design passes if its rejection rate is within the Holm-corrected bar of 5%. Cluster and switchback are left out at the tight end, where their SE is 0 and they cannot reject, so their rejection rate there is reported as context, not checked
 - Loose end. Bias for every design should be consistent with zero, tested as bias divided by its Monte Carlo SE at the 5% level
 - Sensitivity. Two cases, each changing one Part 1 input and resized with the same market rule, run at their own 7 tightness levels and both spread levels with 10,000 runs each. Higher base rate, the No E-Mail visit rate (10.62% over two weeks) with the same +0.6805pp lift, 6,275 buyers per region. Smaller lift, the Womens vs No E-Mail lift (+0.3111pp) with the same 0.5726% base rate, 38,426 buyers per region. The user-level bias should still grow as supply tightens and the other two designs should still show none
 
 Why. Both inputs are real rates from the same experiment, so the check uses grounded values rather than picked ones. The visit rate is a different behavior from buying and only tests whether the pattern holds at a higher rate.
 
-Each check family is corrected with Holm, the same method as the Part 1 primary family, so the chance of any false alarm in a family stays at 5%. The loose-end family has 6 tests (3 designs x 2 spread levels) and the zero-lift family has 18 (3 designs x 3 levels x 2 spread levels).
+Each check family is corrected with Holm, the same method as the Part 1 primary family, so the chance of any false alarm in a family stays at 5%. The loose-end family has 6 tests (3 designs x 2 spread levels) and the zero-lift family has 16 (3 designs x 3 levels x 2 spread levels, minus cluster and switchback at the tight end).
 
 Why. Running many checks at an uncorrected 5% bar would make at least one false alarm likely even with no bug.
 
